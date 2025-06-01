@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>רשומות עובדים - מצב כהה</title>
+
+  <!-- Bootstrap 5 (עברית) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+  <!-- jQuery UI Datepicker עברי -->
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- jQuery UI -->
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+  <!-- תרגום לעברית של לוח שנה -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ui-datepicker/i18n/datepicker-he.min.js"></script>
+
+  <!-- DataTables -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2980b9;
+      --accent-color: #e74c3c;
+      --text-color: #333;
+      --light-bg: #f8f9fa;
+      --border-color: #ddd;
+      --modal-overlay: rgba(0, 0, 0, 0.5);
+    }
+    
+    body {
+      font-family: 'Rubik', Arial, sans-serif;
+      direction: rtl;
+      text-align: right;
+      padding: 0;
+      margin: 0;
+      color: var(--text-color);
+      background: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    h1 {
+      color: var(--primary-color);
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .search-box {
+      position: relative;
+    }
+    
+    .search-box input {
+      padding: 8px 12px 8px 30px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .search-box i {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #777;
+    }
+    
+    select, input[type="date"] {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    .btn:hover {
+      background-color: var(--secondary-color);
+    }
+    
+    .btn-accent {
+      background-color: var(--accent-color);
+    }
+    
+    .btn-accent:hover {
+      background-color: #c0392b;
+    }
+    
+    table.dataTable {
+      width: 100% !important;
+      margin: 0 !important;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    
+    table.dataTable thead th {
+      background: var(--light-bg);
+      padding: 12px 8px;
+      border-bottom: 2px solid var(--primary-color);
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    
+    table.dataTable tbody td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+    
+    table.dataTable tbody tr:hover {
+      background-color: rgba(52, 152, 219, 0.05);
+    }
+    
+    .dataTables_wrapper .dataTables_length, 
+    .dataTables_wrapper .dataTables_filter, 
+    .dataTables_wrapper .dataTables_info, 
+    .dataTables_wrapper .dataTables_processing, 
+    .dataTables_wrapper .dataTables_paginate {
+      color: var(--text-color);
+      margin-bottom: 10px;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+      border-radius: 4px;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+      background: var(--primary-color) !important;
+      color: white !important;
+      border: 1px solid var(--primary-color) !important;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      text-align: center;
+    }
+    
+    .badge-enter {
+      background-color: #2ecc71;
+      color: white;
+    }
+    
+    .badge-exit {
+      background-color: #e74c3c;
+      color: white;
+    }
+    
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+    }
+    
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid var(--primary-color);
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error-message {
+      color: var(--accent-color);
+      text-align: center;
+      padding: 20px;
+      font-weight: bold;
+    }
+    
+    /* מודל צף */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--modal-overlay);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      margin: 50px auto;
+      max-width: 800px;
+      position: relative;
+      animation: modalFadeIn 0.3s;
+    }
+    
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .modal-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    .modal-close {
+      font-size: 24px;
+      color: #777;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .employee-details {
+      margin-bottom: 20px;
+    }
+    
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .detail-item:last-child {
+      border-bottom: none;
+    }
+    
+    .detail-label {
+      font-weight: bold;
+      color: var(--secondary-color);
+    }
+    
+    .employee-name {
+      cursor: pointer;
+      color: var(--primary-color);
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+    
+    .employee-name:hover {
+      color: var(--secondary-color);
+    }
+    
+    .summary-box {
+      background-color: var(--light-bg);
+      border-radius: 4px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    
+    .summary-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: var(--primary-color);
+    }
+    
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .stat-item {
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--primary-color);
+      display: block;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #777;
+    }
+    
+    /* מדיה קווארי */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .controls {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .filter-group {
+        width: 100%;
+      }
+      
+      select, input[type="date"], .search-box input {
+        width: 100%;
+      }
+      
+      table.dataTable {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      
+      .modal-content {
+        margin: 20px;
+        width: auto;
+      }
+      
+      .summary-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2 class="mb-4">רשומות עובדים</h2>
+
+  <div class="filters d-flex flex-wrap align-items-center">
+    <label for="clockFilter">סינון לפי שעון:</label>
+    <select id="clockFilter" class="form-select w-auto">
+      <option value="">הצג הכל</option>
+    </select>
+
+    <label for="dateFilter">סינון לפי תאריך:</label>
+    <input type="text" id="dateFilter" class="form-control w-auto" placeholder="בחר תאריך">
+
+    <button id="resetFilters" class="btn btn-light btn-sm">🧹 נקה סינונים</button>
+  </div>
+
+  <div class="table-responsive">
+    <table id="recordsTable" class="display table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>תאריך</th>
+          <th>שעה</th>
+          <th>שם</th>
+          <th>ת״ז</th>
+          <th>שעון</th>
+          <th>מיקום</th>
+          <th>סוג</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let table;
+  let lastClickedName = null;
+
+  $(document).ready(function () {
+    // הפעלת לוח שנה בעברית ו-RTL
+    $.datepicker.setDefaults($.datepicker.regional["he"]);
+    $("#dateFilter").datepicker({
+      dateFormat: "dd-mm-yy",
+      isRTL: true
+    });
+
+    fetch("https://script.google.com/macros/s/AKfycbwgdPkzY9Y6kPl_s5VF651_JcvfMd5__BY6rbwkWwkf_RUJoL7x4VQ63p_u6ceUYJpMiA/exec")
+      .then(response => response.json())
+      .then(data => {
+        table = $('#recordsTable').DataTable({
+          language: {
+            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/he.json"
+          },
+          data: data,
+          responsive: true,
+          columns: [
+            { data: "date" },
+            { data: "time" },
+            {
+              data: "name",
+              render: function (data) {
+                return `<a class="name-link" data-name="${data}">${data}</a>`;
+              }
+            },
+            { data: "id" },
+            { data: "clock" },
+            { data: "location" },
+            { data: "type" }
+          ]
+        });
+
+        // מילוי select לפי clock - location
+        const clocksWithLocation = {};
+        data.forEach(record => {
+          if (!clocksWithLocation[record.clock]) {
+            clocksWithLocation[record.clock] = record.location;
+          }
+        });
+
+        const sortedClocks = Object.entries(clocksWithLocation)
+          .sort((a, b) => `${a[0]} - ${a[1]}`.localeCompare(`${b[0]} - ${b[1]}`, 'he'));
+
+        for (const [clock, location] of sortedClocks) {
+          $('#clockFilter').append(`<option value="${clock}">${clock} - ${location}</option>`);
+        }
+
+        // סינון לפי שעון
+        $('#clockFilter').on('change', function () {
+          table.column(4).search(this.value).draw();
+        });
+
+        // סינון לפי תאריך
+        $('#dateFilter').on('change', function () {
+          table.column(0).search(this.value).draw();
+        });
+
+        // סינון לפי שם
+        $('#recordsTable tbody').on('click', 'a.name-link', function () {
+          const name = $(this).data('name');
+          if (lastClickedName === name) {
+            table.column(2).search('').draw();
+            lastClickedName = null;
+          } else {
+            table.column(2).search(name).draw();
+            lastClickedName = name;
+          }
+        });
+
+        // איפוס
+        $('#resetFilters').on('click', function () {
+          $('#clockFilter').val('');
+          $('#dateFilter').val('');
+          table.columns().search('').draw();
+          lastClickedName = null;
+        });
+      })
+      .catch(error => {
+        console.error("שגיאה:", error);
+      });
+  });
+</script>
+
+</body>
+</html>
