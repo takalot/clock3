@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>רשומות עובדים</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css"/>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <style>
+body {
+  direction: rtl;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to bottom, #133d73, #000000); /* כחול נייבי למעלה לשחור למטה */
+  color: #f0f0f0;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+
+    h2 {
+      color: #000000;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #444;
+    }
+
+    th {
+      background-color: #2b2b2b;
+    }
+
+    a {
+      color: #4ea3ff;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    select, input[type="text"] {
+      padding: 6px 10px;
+      margin: 10px 5px;
+      background-color: #000000;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      td {
+        border: none;
+        border-bottom: 1px solid #444;
+        position: relative;
+        padding-right: 50%;
+      }
+
+      td::before {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+
+      td:nth-of-type(1)::before { content: "תאריך"; }
+      td:nth-of-type(2)::before { content: "שעה"; }
+      td:nth-of-type(3)::before { content: "שם"; }
+      td:nth-of-type(4)::before { content: "ת\"ז"; }
+      td:nth-of-type(5)::before { content: "שעון"; }
+      td:nth-of-type(6)::before { content: "מיקום"; }
+      td:nth-of-type(7)::before { content: "סוג"; }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>רשומות</h2>
+
+  <!-- סינון לפי שעון -->
+  <label for="clockFilter">סינון לפי שעון:</label>
+  <select id="clockFilter">
+    <option value="">הצג הכל</option>
+  </select>
+
+  <!-- סינון לפי תאריך -->
+  <label for="dateFilter">סינון לפי תאריך:</label>
+  <input type="text" id="dateFilter" placeholder="בחר תאריך">
+
+  <!-- כפתור איפוס סינונים -->
+  <button id="resetFilters">איפוס סינונים</button>
+
+  <!-- טבלת נתונים -->
+  <table id="recordsTable" class="display">
+    <thead>
+      <tr>
+        <th>תאריך</th>
+        <th>שעה</th>
+        <th>שם</th>
+        <th>ת"ז</th>
+        <th>שעון</th>
+        <th>מיקום</th>
+        <th>סוג</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let table; // משתנה שיחזיק את הטבלה
+
+    $(document).ready(function () {
+
+      // 🗓️ אתחול קלט תאריך עם flatpickr
+      flatpickr("#dateFilter", {
+        dateFormat: "d/m/Y", // תצוגת תאריך
+        onChange: function (selectedDates, dateStr) {
+          // חיפוש בתור עמודת תאריך (עמודה 0)
+          table.column(0).search(dateStr).draw();
+        }
+      });
+
+      // 📡 הבאת הנתונים מ-Google Apps Script
+      fetch("https://script.google.com/macros/s/AKfycbwgdPkzY9Y6kPl_s5VF651_JcvfMd5__BY6rbwkWwkf_RUJoL7x4VQ63p_u6ceUYJpMiA/exec")
+        .then(response => response.json())
+        .then(data => {
+          
+          // 📋 יצירת טבלת DataTables
+          table = $('#recordsTable').DataTable({
+            language: {
+              url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/he.json" // תרגום לעברית
+            },
+            data: data,
+            columns: [
+						  { 
+			  data: "date",
+			  render: function (data) {
+				// המרה מ-00-00-0000 ל-00/00/0000
+				return data.replace(/-/g, "/");
+			  }
+			},
+              { data: "time" },
+              {
+                data: "name",
+                render: function (data, type, row) {
+                  // הצגת השם כלחיץ לסינון
+                  return `<a class="name-link" data-name="${data}">${data}</a>`;
+                }
+              },
+              { data: "id" },
+              { data: "clock" },
+              { data: "location" },
+              { data: "type" }
+            ]
+          });
+
+          // 🧩 יצירת רשימת שעונים ייחודיים
+          const clocksWithLocation = {};
+          data.forEach(record => {
+            if (!clocksWithLocation[record.clock]) {
+              clocksWithLocation[record.clock] = record.location;
+            }
+          });
+
+          // מיון אלפביתי בעברית
+          const sortedEntries = Object.entries(clocksWithLocation).sort((a, b) => {
+            return a[1].localeCompare(b[1], 'he');
+          });
+
+          // מילוי תפריט הסינון לפי שעון
+          sortedEntries.forEach(([clock, location]) => {
+            $('#clockFilter').append(`<option value="${clock}">${clock} - ${location}</option>`);
+          });
+
+          // 🎛️ סינון לפי שעון
+          $('#clockFilter').on('change', function () {
+            const selectedClock = $(this).val();
+            table.column(4).search(selectedClock).draw();
+          });
+
+          // 🧍 סינון לפי שם בלחיצה על השם
+          $('#recordsTable tbody').on('click', 'a.name-link', function () {
+            const name = $(this).data('name');
+            table.column(2).search(name).draw();
+          });
+
+          // 🔄 כפתור איפוס הסינון
+          $('#resetFilters').on('click', function () {
+            $('#clockFilter').val('');
+            $('#dateFilter').val('');
+            table.columns().search('').draw(); // איפוס כל הסינונים
+          });
+
+        })
+        .catch(error => {
+          console.error("שגיאה בטעינת נתונים:", error);
+        });
+    });
+  </script>
+
+</body>
+</html>
